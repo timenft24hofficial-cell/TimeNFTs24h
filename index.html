@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TimeNFTs24H — The On-Chain Living Chronograph</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --black:#000000;
+    --white:#ffffff;
+    --grey-1:#0a0a0a;
+    --grey-2:#161616;
+    --grey-3:#2a2a2a;
+    --grey-mid:#6a6a6a;
+    --grey-light:#b8b8b8;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--black);
+    color:var(--white);
+    font-family:'Space Grotesk',sans-serif;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:'JetBrains Mono',monospace;}
+  a{color:inherit;text-decoration:none;}
+
+  .grain{
+    position:fixed;inset:0;pointer-events:none;z-index:2;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.022) 0px, rgba(255,255,255,0.022) 1px, transparent 1px, transparent 3px);
+    opacity:.5;
+    mix-blend-mode:overlay;
+  }
+
+  nav{
+    position:fixed;top:0;left:0;right:0;z-index:20;
+    display:flex;justify-content:space-between;align-items:center;
+    padding:20px 5vw;
+    border-bottom:1px solid var(--grey-3);
+    backdrop-filter:blur(10px);
+    background:rgba(0,0,0,0.65);
+    overflow:hidden;
+  }
+  nav::before{
+    content:'';position:absolute;bottom:-1px;left:-30%;width:30%;height:1px;
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,.9), transparent);
+    animation:navsweep 5s linear infinite;
+  }
+  @keyframes navsweep{
+    0%{left:-30%;}
+    100%{left:100%;}
+  }
+  .brand{font-weight:700;font-size:1.05rem;letter-spacing:.02em;display:flex;align-items:center;}
+  .brand .dot{
+    display:inline-block;width:6px;height:6px;background:var(--white);border-radius:50%;margin:0 7px;
+    animation:pulse-dot 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse-dot{
+    0%,100%{opacity:1;transform:scale(1);box-shadow:0 0 0 0 rgba(255,255,255,.5);}
+    50%{opacity:.4;transform:scale(.72);box-shadow:0 0 6px 2px rgba(255,255,255,.15);}
+  }
+  .navlinks{display:flex;gap:34px;font-size:.85rem;color:var(--grey-light);}
+  .navlinks a{position:relative;}
+  .navlinks a::after{
+    content:'';position:absolute;left:0;bottom:-6px;width:0;height:1px;background:var(--white);
+    transition:width .25s ease;
+  }
+  .navlinks a:hover::after{width:100%;}
+  .navlinks a:hover{color:var(--white);}
+  .navlinks a.x-link{display:flex;align-items:center;gap:7px;color:var(--white);}
+  .navlinks a.x-link svg{width:14px;height:14px;fill:var(--white);}
+
+  /* ===== Hero ===== */
+  .hero{
+    min-height:100vh;
+    display:flex;flex-direction:column;justify-content:center;align-items:center;
+    text-align:center;position:relative;padding:130px 6vw 60px;
+    border-bottom:1px solid var(--grey-3);
+  }
+  .grid-bg{
+    position:absolute;inset:0;z-index:0;opacity:.32;
+    background-image:
+      linear-gradient(var(--grey-2) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grey-2) 1px, transparent 1px);
+    background-size:42px 42px;
+    mask-image:radial-gradient(ellipse 60% 55% at 50% 40%, black 0%, transparent 75%);
+  }
+  .eyebrow{
+    font-size:.75rem;letter-spacing:.28em;text-transform:uppercase;
+    color:var(--grey-light);margin-bottom:28px;z-index:1;
+  }
+  .eyebrow::before{content:'— ';}
+  .eyebrow::after{content:' —';}
+
+  /* Hourglass — modern line-art, interactive on hover / tap */
+  .hourglass-wrap{
+    width:70px;height:100px;margin-bottom:26px;z-index:1;position:relative;
+    cursor:pointer;
+  }
+  .hourglass-hint{
+    font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--grey-mid);
+    margin-bottom:34px;z-index:1;transition:color .25s ease;
+  }
+  .hourglass-wrap:hover + .hourglass-hint,
+  .hourglass-wrap.active + .hourglass-hint{color:var(--grey-light);}
+  .hourglass{width:100%;height:100%;transition:transform .4s cubic-bezier(.4,0,.2,1);}
+  .hourglass svg{width:100%;height:100%;display:block;overflow:visible;}
+  .hg-frame{fill:none;stroke:var(--white);stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round;}
+  .hg-cap{fill:var(--white);}
+  .sand-top{transform-box:fill-box;transform-origin:center top;}
+  .sand-bottom{transform-box:fill-box;transform-origin:center bottom;}
+  .grain-fall{opacity:0;}
+  .hg-glow{opacity:0;transition:opacity .4s ease;}
+
+  .hourglass-wrap.flipping .hourglass{transform:rotate(180deg);}
+  .hourglass-wrap.flipping .hg-glow{opacity:1;animation:hgglow 1.4s ease;}
+  .hourglass-wrap.flipping .sand-top{animation:drain 1.4s ease-in forwards;}
+  .hourglass-wrap.flipping .sand-bottom{animation:fill 1.4s ease-in forwards;}
+  .hourglass-wrap.flipping .grain-fall{animation:trickle 1.4s linear forwards;}
+  @keyframes hgglow{
+    0%,100%{opacity:0;}
+    50%{opacity:.5;}
+  }
+  @keyframes drain{
+    0%{transform:scaleY(1);}
+    100%{transform:scaleY(0.04);}
+  }
+  @keyframes fill{
+    0%{transform:scaleY(0.04);}
+    100%{transform:scaleY(1);}
+  }
+  @keyframes trickle{
+    0%{opacity:0;}
+    10%{opacity:1;}
+    90%{opacity:1;}
+    100%{opacity:0;}
+  }
+
+  h1{
+    font-size:clamp(2.1rem,6vw,4.4rem);
+    font-weight:700;line-height:1.05;letter-spacing:-.01em;
+    max-width:17ch;z-index:1;
+  }
+  h1 .thin{font-weight:400;color:var(--grey-light);}
+
+  .clock-live{
+    font-family:'JetBrains Mono',monospace;
+    font-size:clamp(2.4rem,7vw,4.8rem);
+    letter-spacing:.05em;
+    margin:38px 0 6px;
+    z-index:1;
+    font-weight:700;
+    display:flex;gap:.1em;
+  }
+  .clock-sub{color:var(--grey-mid);font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;z-index:1;margin-bottom:44px;}
+
+  .hero-desc{max-width:540px;color:var(--grey-light);font-size:1rem;line-height:1.75;z-index:1;margin-bottom:6px;}
+
+  .cta-row{display:flex;gap:16px;margin-top:34px;z-index:1;flex-wrap:wrap;justify-content:center;}
+  .btn{
+    padding:14px 30px;border:1px solid var(--white);font-size:.85rem;
+    letter-spacing:.03em;transition:all .25s ease;cursor:pointer;background:transparent;color:var(--white);
+    font-family:inherit;
+  }
+  .btn.primary{background:var(--white);color:var(--black);}
+  .btn.primary:hover{background:transparent;color:var(--white);}
+  .btn:not(.primary):hover{background:var(--white);color:var(--black);}
+
+  .disclaimer-strip{
+    z-index:1;margin-top:40px;max-width:600px;
+    border:1px solid var(--grey-3);padding:16px 20px;font-size:.78rem;
+    color:var(--grey-mid);line-height:1.7;text-align:left;
+  }
+  .disclaimer-strip b{color:var(--grey-light);}
+
+  section{padding:110px 6vw;border-bottom:1px solid var(--grey-3);position:relative;}
+  .section-label{
+    font-size:.75rem;letter-spacing:.2em;text-transform:uppercase;color:var(--grey-mid);
+    margin-bottom:16px;display:flex;align-items:center;gap:14px;
+  }
+  .section-label::after{content:'';flex:1;height:1px;background:var(--grey-3);}
+  h2{font-size:clamp(1.7rem,3.6vw,2.6rem);font-weight:600;max-width:22ch;margin-bottom:20px;line-height:1.2;}
+  .section-intro{color:var(--grey-light);max-width:620px;line-height:1.8;margin-bottom:56px;font-size:1rem;}
+
+  .chrono-panel{display:grid;grid-template-columns:1fr;gap:48px;}
+  @media(min-width:900px){.chrono-panel{grid-template-columns:1.05fr .95fr;align-items:center;}}
+
+  .dial-wrap{
+    position:relative;display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--grey-3);padding:30px;aspect-ratio:1;max-width:460px;
+    overflow:visible;isolation:isolate;
+  }
+  .fog-layer{
+    position:absolute;inset:-60px;z-index:0;pointer-events:none;
+    filter:blur(28px);mix-blend-mode:screen;
+  }
+  .fog-blob{
+    position:absolute;width:34%;height:34%;border-radius:50%;
+    background:radial-gradient(circle, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 70%);
+    animation:fogdrift 9s ease-in-out infinite;
+  }
+  .fog-blob:nth-child(1){top:-6%;left:32%;animation-delay:0s;}
+  .fog-blob:nth-child(2){top:20%;left:-8%;animation-delay:1.6s;}
+  .fog-blob:nth-child(3){top:20%;left:70%;animation-delay:3.1s;}
+  .fog-blob:nth-child(4){top:62%;left:-6%;animation-delay:4.6s;}
+  .fog-blob:nth-child(5){top:62%;left:68%;animation-delay:6.1s;}
+  .fog-blob:nth-child(6){top:82%;left:30%;animation-delay:7.6s;}
+  @keyframes fogdrift{
+    0%,100%{opacity:.08;transform:scale(.7) translate(0,0);}
+    50%{opacity:.4;transform:scale(1.35) translate(6px,-6px);}
+  }
+  .dial-wrap svg{position:relative;z-index:1;width:100%;height:100%;overflow:visible;cursor:crosshair;}
+  .tick{stroke:var(--grey-3);stroke-width:1.4;transition:stroke .2s ease, stroke-width .2s ease;}
+  .tick.past{stroke:var(--grey-light);}
+  .tick.hour{stroke-width:2.2;}
+  .tick.now{stroke:var(--white);stroke-width:2.6;}
+  .tick.hovered{stroke:var(--white);stroke-width:3;}
+  .dial-center{position:relative;z-index:1;text-align:center;pointer-events:none;}
+  .dial-center .t{font-family:'JetBrains Mono',monospace;font-size:1.55rem;font-weight:700;letter-spacing:.03em;}
+  .dial-center .l{font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--grey-mid);margin-top:6px;}
+  .dial-tooltip{
+    position:absolute;top:8px;left:50%;transform:translateX(-50%);
+    font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--grey-light);
+    background:var(--grey-1);border:1px solid var(--grey-3);padding:6px 12px;
+    opacity:0;transition:opacity .2s ease;pointer-events:none;white-space:nowrap;
+  }
+  .dial-tooltip.show{opacity:1;}
+
+  .chrono-caption{color:var(--grey-mid);font-size:.82rem;line-height:1.9;}
+  .chrono-caption b{color:var(--white);}
+  .stat-row{display:flex;gap:36px;margin-top:26px;flex-wrap:wrap;}
+  .stat{border-left:1px solid var(--grey-3);padding-left:24px;}
+  .stat:first-child{border-left:none;padding-left:0;}
+  .stat .n{font-family:'JetBrains Mono',monospace;font-size:1.6rem;font-weight:700;}
+  .stat .l{color:var(--grey-mid);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;margin-top:4px;}
+
+  .features{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1px;background:var(--grey-3);border:1px solid var(--grey-3);}
+  .feature{background:var(--black);padding:34px 28px;transition:background .25s ease;}
+  .feature:hover{background:var(--grey-1);}
+  .feature .idx{font-family:'JetBrains Mono',monospace;color:var(--grey-mid);font-size:.8rem;margin-bottom:16px;}
+  .feature h3{font-size:1.05rem;font-weight:600;margin-bottom:10px;}
+  .feature p{color:var(--grey-light);font-size:.9rem;line-height:1.7;}
+
+  .trust-list{display:flex;flex-direction:column;}
+  .trust-item{
+    display:grid;grid-template-columns:60px 1fr;gap:22px;
+    padding:28px 0;border-bottom:1px solid var(--grey-3);
+    align-items:start;
+  }
+  .trust-item:last-child{border-bottom:none;}
+  .trust-icon{
+    font-family:'JetBrains Mono',monospace;color:var(--grey-mid);font-size:.85rem;
+    display:flex;align-items:center;justify-content:center;height:40px;width:40px;
+    border:1px solid var(--grey-3);
+  }
+  .trust-item h4{font-size:1.02rem;font-weight:600;margin-bottom:6px;}
+  .trust-item p{color:var(--grey-light);font-size:.9rem;line-height:1.75;max-width:640px;}
+
+  .split{display:grid;grid-template-columns:1fr;gap:60px;}
+  @media(min-width:900px){.split{grid-template-columns:1fr 1fr;}}
+
+  .budget{margin-top:10px;}
+  .bud-row{margin-bottom:26px;}
+  .bud-top{display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:8px;color:var(--grey-light);}
+  .bud-top b{color:var(--white);}
+  .bud-track{height:10px;background:var(--grey-2);border:1px solid var(--grey-3);}
+  .bud-fill{height:100%;background:var(--white);width:0;transition:width 1.4s ease;}
+
+  .roadmap{position:relative;padding-left:40px;}
+  .rline{position:absolute;top:6px;bottom:6px;left:9px;width:1px;background:var(--grey-3);}
+  .rstep{position:relative;padding-bottom:46px;}
+  .rstep:last-child{padding-bottom:0;}
+  .rdot{position:absolute;left:-40px;top:2px;width:19px;height:19px;border:1px solid var(--white);border-radius:50%;background:var(--black);
+    display:flex;align-items:center;justify-content:center;font-size:.62rem;font-family:'JetBrains Mono',monospace;}
+  .rstep h4{font-size:1.02rem;font-weight:600;margin-bottom:8px;}
+  .rstep p{color:var(--grey-light);font-size:.88rem;line-height:1.75;max-width:600px;}
+
+  footer{padding:60px 6vw 50px;text-align:center;}
+  footer .brand{display:block;margin-bottom:14px;}
+  footer p{color:var(--grey-mid);font-size:.78rem;line-height:1.8;max-width:640px;margin:0 auto;}
+  footer .tag{margin-top:26px;color:var(--grey-mid);font-size:.72rem;letter-spacing:.15em;text-transform:uppercase;}
+  footer .x-follow{
+    display:inline-flex;align-items:center;gap:8px;margin-top:24px;
+    border:1px solid var(--grey-3);padding:10px 22px;font-size:.85rem;
+    transition:all .25s ease;
+  }
+  footer .x-follow svg{width:14px;height:14px;fill:var(--white);}
+  footer .x-follow:hover{background:var(--white);color:var(--black);}
+  footer .x-follow:hover svg{fill:var(--black);}
+
+  ::selection{background:var(--white);color:var(--black);}
+  :focus-visible{outline:2px solid var(--white);outline-offset:3px;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important;transition:none !important;}
+  }
+</style>
+</head>
+<body>
+<div class="grain"></div>
+
+<nav>
+  <div class="brand">TimeNFTs<span class="dot"></span>24H</div>
+  <div class="navlinks">
+    <a href="#concept">Concept</a>
+    <a href="#trust">Transparency</a>
+    <a href="#roadmap">Roadmap</a>
+    <a href="https://x.com/TimeNFTs_24h" target="_blank" rel="noopener noreferrer" class="x-link" aria-label="Follow TimeNFTs24H on X">
+      <svg viewBox="0 0 24 24"><path d="M18.9 2H22l-7.6 8.7L23 22h-6.9l-5.4-7-6.2 7H1.3l8.1-9.3L1 2h7l4.9 6.4L18.9 2Zm-2.4 18h1.9L7.6 4H5.6l10.9 16Z"/></svg>
+      @TimeNFTs_24h
+    </a>
+  </div>
+</nav>
+
+<!-- ===== HERO ===== -->
+<section class="hero" style="border-top:none;">
+  <div class="grid-bg"></div>
+  <div class="eyebrow">An On-Chain Time Archive</div>
+
+  <div class="hourglass-wrap" id="hourglass" role="button" tabindex="0" aria-label="Flip the hourglass">
+    <div class="hourglass">
+      <svg viewBox="0 0 64 96" fill="none">
+        <defs>
+          <radialGradient id="hgGlowGrad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="white" stop-opacity="0.9"/>
+            <stop offset="100%" stop-color="white" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <circle class="hg-glow" cx="32" cy="48" r="30" fill="url(#hgGlowGrad)"/>
+        <!-- top & bottom caps -->
+        <rect class="hg-cap" x="6" y="4" width="52" height="5" rx="2.5"/>
+        <rect class="hg-cap" x="6" y="87" width="52" height="5" rx="2.5"/>
+        <!-- glass frame -->
+        <path class="hg-frame" d="M13 9 C13 24, 24 30, 32 34 C40 30, 51 24, 51 9"/>
+        <path class="hg-frame" d="M13 87 C13 72, 24 66, 32 62 C40 66, 51 72, 51 87"/>
+        <!-- sand -->
+        <path class="sand-top" d="M18 12 L46 12 C46 22, 34 28, 32 32 C30 28, 18 22, 18 12 Z" fill="white"/>
+        <path class="sand-bottom" d="M18 84 L46 84 C46 74, 34 68, 32 64 C30 68, 18 74, 18 84 Z" fill="white" style="transform:scaleY(0.04);"/>
+        <rect class="grain-fall" x="30.5" y="34" width="3" height="28" fill="white"/>
+      </svg>
+    </div>
+  </div>
+  <div class="hourglass-hint">tap the hourglass to flip it</div>
+
+  <h1>1,440 minutes. <span class="thin">24 hours.</span><br>Own your exact moment on-chain.</h1>
+
+  <div class="clock-live mono" id="liveClock" aria-live="polite">00:00:00</div>
+  <div class="clock-sub">Coordinated Universal Time (UTC) — today's minute, counted live</div>
+
+  <p class="hero-desc">
+    TimeNFTs24H is a decentralized digital archive that divides every 24-hour cycle into
+    1,440 unique minute-tokens — absolute mathematical scarcity, an open-source smart contract,
+    and full financial transparency.
+  </p>
+
+  <div class="cta-row">
+    <button class="btn primary">Explore the Chrono-Grid</button>
+    <button class="btn">Read the Smart Contract</button>
+  </div>
+
+  <div class="disclaimer-strip">
+    <b>Disclaimer:</b> TimeNFTs24H tokens are digital collectibles for creative expression and
+    community participation. They are not investment products — market value can be zero at any time.
+  </div>
+</section>
+
+<!-- ===== CORE CONCEPT / SIGNATURE CHRONO-GRID ===== -->
+<section id="concept">
+  <div class="section-label">Chrono-Grid</div>
+  <h2>1,440 minutes on a single dial. The day, mapped in real time.</h2>
+  <p class="section-intro">
+    Each tick on the dial below is one of the 1,440 minutes in today's cycle. Bright ticks have
+    already passed, the glowing tick is right now — hover or drag across the dial to preview any minute.
+  </p>
+
+  <div class="chrono-panel">
+    <div class="dial-wrap">
+      <div class="fog-layer">
+        <div class="fog-blob"></div>
+        <div class="fog-blob"></div>
+        <div class="fog-blob"></div>
+        <div class="fog-blob"></div>
+        <div class="fog-blob"></div>
+        <div class="fog-blob"></div>
+      </div>
+      <div class="dial-tooltip" id="dialTooltip"></div>
+      <svg id="dialSvg" viewBox="0 0 400 400" aria-label="Live 1,440-minute dial">
+        <circle cx="200" cy="200" r="188" fill="none" stroke="var(--grey-3)" stroke-width="1"/>
+        <g id="ticksGroup"></g>
+      </svg>
+      <div class="dial-center">
+        <div class="t mono" id="dialClock">00:00:00</div>
+        <div class="l">UTC — minute <span id="dialMinuteIdx">0</span> / 1440</div>
+      </div>
+    </div>
+    <div>
+      <p class="chrono-caption">
+        <b>1,440 ticks arranged on one continuous ring</b> — the exact number of minutes in a day.
+        Not one tick more, not one less. At launch, every tick becomes a unique token any wallet holder can claim.
+      </p>
+      <div class="stat-row">
+        <div class="stat"><div class="n mono" id="statElapsed">0</div><div class="l">minutes elapsed today</div></div>
+        <div class="stat"><div class="n mono" id="statRemaining">1440</div><div class="l">minutes remaining</div></div>
+        <div class="stat"><div class="n mono">1,440</div><div class="l">tokens — hard cap</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== UTILITY FEATURES ===== -->
+<section>
+  <div class="section-label">On-Chain Utility</div>
+  <h2>Not a static image — a living, interactive time vessel.</h2>
+  <div class="features">
+    <div class="feature">
+      <div class="idx mono">[ 01 ]</div>
+      <h3>Absolute Mathematical Scarcity</h3>
+      <p>Exactly 1,440 tokens — no more, no less — mirroring the minutes in a day, enforced directly in the smart contract.</p>
+    </div>
+    <div class="feature">
+      <div class="idx mono">[ 02 ]</div>
+      <h3>Live Chrono-Grid</h3>
+      <p>A decentralized interface showing the world clock in real time, letting you connect your wallet and claim your favorite minute — a birth minute, a lucky hour, a personal milestone.</p>
+    </div>
+    <div class="feature">
+      <div class="idx mono">[ 03 ]</div>
+      <h3>On-Chain Time Capsules</h3>
+      <p>Each token is a permanent cryptographic vessel, letting holders embed encrypted notes or memories directly into their token's metadata.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== TRUST / ACCOUNTABILITY ===== -->
+<section id="trust">
+  <div class="section-label">Transparency & Accountability</div>
+  <h2>A pseudonymous team — backed by guarantees that don't rely on identity.</h2>
+  <p class="section-intro">
+    The team behind TimeNFTs24H remains pseudonymous. In exchange, we commit to five verifiable technical
+    safeguards that don't depend on personal trust.
+  </p>
+
+  <div class="trust-list">
+    <div class="trust-item">
+      <div class="trust-icon mono">01</div>
+      <div><h4>Open-source, verified contract</h4><p>Full contract code published publicly and verified on-chain (Etherscan) before any minting opens.</p></div>
+    </div>
+    <div class="trust-item">
+      <div class="trust-icon mono">02</div>
+      <div><h4>Independent security audit</h4><p>A third-party audit report published publicly before launch — not promised as a future phase.</p></div>
+    </div>
+    <div class="trust-item">
+      <div class="trust-icon mono">03</div>
+      <div><h4>Multisig treasury</h4><p>All collected funds sit in a multi-signature wallet requiring several independent keyholders to approve any withdrawal.</p></div>
+    </div>
+    <div class="trust-item">
+      <div class="trust-icon mono">04</div>
+      <div><h4>On-chain vesting schedule</h4><p>The founder allocation unlocks gradually, enforced by the contract itself — not by personal promise.</p></div>
+    </div>
+    <div class="trust-item">
+      <div class="trust-icon mono">05</div>
+      <div><h4>Sustained public track record</h4><p>Regular development updates and community engagement published well before minting — reputation earned over time, not by name.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FINANCIAL STRUCTURE ===== -->
+<section>
+  <div class="split">
+    <div>
+      <div class="section-label">Financial Structure</div>
+      <h2>A clean split. No market-control pools.</h2>
+      <p class="section-intro" style="margin-bottom:0;">
+        No market-manipulation pools, no artificial floor-price control — just organic, decentralized building,
+        with funds held in a multisig treasury and released per the published vesting schedule.
+      </p>
+    </div>
+    <div class="budget">
+      <div class="bud-row">
+        <div class="bud-top"><span>Development & infrastructure</span><b>50%</b></div>
+        <div class="bud-track"><div class="bud-fill" style="width:50%;"></div></div>
+      </div>
+      <div class="bud-row">
+        <div class="bud-top"><span>Founder allocation (per vesting schedule)</span><b>50%</b></div>
+        <div class="bud-track"><div class="bud-fill" style="width:50%;"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== ROADMAP ===== -->
+<section id="roadmap" style="border-bottom:none;">
+  <div class="section-label">Roadmap</div>
+  <h2>Four phases, with public dates and monthly reports.</h2>
+  <div class="roadmap">
+    <div class="rline"></div>
+    <div class="rstep"><div class="rdot mono">01</div><h4>Contract development & audit</h4><p>Smart contract build, independent security audit, Chrono-Grid interface design, and community building under @TimeNFT_24H.</p></div>
+    <div class="rstep"><div class="rdot mono">02</div><h4>Full mint — 1,440 tokens</h4><p>Complete launch with no reservations — every token, including minute #001, is claimable equally.</p></div>
+    <div class="rstep"><div class="rdot mono">03</div><h4>Time Capsule activation</h4><p>Opening the encrypted-memory feature inside each holder's token metadata.</p></div>
+    <div class="rstep"><div class="rdot mono">04</div><h4>Long-term community governance</h4><p>Expanding the digital time archive through publicly voted community decisions.</p></div>
+  </div>
+</section>
+
+<footer>
+  <span class="brand mono">TimeNFTs24H</span>
+  <p>
+    A digital artwork and on-chain time archive. Tokens represent unique, scarce moments on the blockchain,
+    designed for digital collection, community expression, and interactive utility — not as an investment vehicle.
+  </p>
+  <a class="x-follow" href="https://x.com/TimeNFTs_24h" target="_blank" rel="noopener noreferrer">
+    <svg viewBox="0 0 24 24"><path d="M18.9 2H22l-7.6 8.7L23 22h-6.9l-5.4-7-6.2 7H1.3l8.1-9.3L1 2h7l4.9 6.4L18.9 2Zm-2.4 18h1.9L7.6 4H5.6l10.9 16Z"/></svg>
+    Follow @TimeNFTs_24h
+  </a>
+  <div class="tag">market value is not guaranteed and may be zero</div>
+</footer>
+
+<script>
+  // ===== Live world clock (UTC) =====
+  const clockEl = document.getElementById('liveClock');
+  const dialClockEl = document.getElementById('dialClock');
+  const dialMinuteIdxEl = document.getElementById('dialMinuteIdx');
+  const elapsedEl = document.getElementById('statElapsed');
+  const remainingEl = document.getElementById('statRemaining');
+
+  function pad(n){ return n.toString().padStart(2,'0'); }
+
+  function tick(){
+    const now = new Date();
+    const h = now.getUTCHours(), m = now.getUTCMinutes(), s = now.getUTCSeconds();
+    const timeStr = pad(h)+':'+pad(m)+':'+pad(s);
+    clockEl.textContent = timeStr;
+    dialClockEl.textContent = timeStr;
+    const minuteOfDay = h*60 + m;
+    dialMinuteIdxEl.textContent = minuteOfDay;
+    elapsedEl.textContent = minuteOfDay;
+    remainingEl.textContent = 1440 - minuteOfDay;
+    paintDial(minuteOfDay);
+  }
+
+  // ===== Radial 1,440-minute dial (signature element) =====
+  const ticksGroup = document.getElementById('ticksGroup');
+  const dialSvg = document.getElementById('dialSvg');
+  const tooltip = document.getElementById('dialTooltip');
+  const TOTAL = 1440;
+  const CX = 200, CY = 200;
+  const R_OUT = 188, R_IN_MIN = 172, R_IN_HOUR = 158;
+  const ticks = [];
+
+  for(let i=0;i<TOTAL;i++){
+    const angle = (i / TOTAL) * 2 * Math.PI - Math.PI/2;
+    const isHour = i % 60 === 0;
+    const rIn = isHour ? R_IN_HOUR : R_IN_MIN;
+    const x1 = CX + rIn * Math.cos(angle);
+    const y1 = CY + rIn * Math.sin(angle);
+    const x2 = CX + R_OUT * Math.cos(angle);
+    const y2 = CY + R_OUT * Math.sin(angle);
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', x1.toFixed(2));
+    line.setAttribute('y1', y1.toFixed(2));
+    line.setAttribute('x2', x2.toFixed(2));
+    line.setAttribute('y2', y2.toFixed(2));
+    line.setAttribute('class', 'tick' + (isHour ? ' hour' : ''));
+    ticksGroup.appendChild(line);
+    ticks.push(line);
+  }
+
+  let lastMinute = -1;
+  function paintDial(minuteOfDay){
+    if(minuteOfDay === lastMinute) return;
+    lastMinute = minuteOfDay;
+    for(let i=0;i<TOTAL;i++){
+      const base = ticks[i].classList.contains('hour') ? 'tick hour' : 'tick';
+      ticks[i].className = base + (i < minuteOfDay ? ' past' : (i === minuteOfDay ? ' now' : ''));
+    }
+  }
+
+  // Hover / drag interaction — preview any minute on the dial
+  function minuteFromEvent(evt){
+    const rect = dialSvg.getBoundingClientRect();
+    const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+    const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+    const px = ((clientX - rect.left) / rect.width) * 400;
+    const py = ((clientY - rect.top) / rect.height) * 400;
+    let angle = Math.atan2(py - CY, px - CX) + Math.PI/2;
+    if(angle < 0) angle += 2 * Math.PI;
+    const idx = Math.round((angle / (2 * Math.PI)) * TOTAL) % TOTAL;
+    return idx;
+  }
+
+  let hoveredTick = null;
+  function showPreview(evt){
+    const idx = minuteFromEvent(evt);
+    if(hoveredTick) hoveredTick.classList.remove('hovered');
+    hoveredTick = ticks[idx];
+    hoveredTick.classList.add('hovered');
+    const hh = Math.floor(idx/60), mm = idx % 60;
+    tooltip.textContent = `${pad(hh)}:${pad(mm)} UTC — minute #${(idx+1).toString().padStart(4,'0')}`;
+    tooltip.classList.add('show');
+  }
+  function hidePreview(){
+    if(hoveredTick){ hoveredTick.classList.remove('hovered'); hoveredTick = null; }
+    tooltip.classList.remove('show');
+  }
+  dialSvg.addEventListener('mousemove', showPreview);
+  dialSvg.addEventListener('mouseleave', hidePreview);
+  dialSvg.addEventListener('touchstart', showPreview, {passive:true});
+  dialSvg.addEventListener('touchmove', showPreview, {passive:true});
+  dialSvg.addEventListener('touchend', hidePreview);
+
+  tick();
+  setInterval(tick, 1000);
+
+  // ===== Interactive hourglass: flips on hover (desktop) or tap (mobile) =====
+  const hg = document.getElementById('hourglass');
+  let flipTimeout = null;
+  function playFlip(){
+    hg.classList.remove('flipping');
+    // restart animation cleanly
+    void hg.offsetWidth;
+    hg.classList.add('flipping');
+    clearTimeout(flipTimeout);
+    flipTimeout = setTimeout(() => hg.classList.remove('flipping'), 1450);
+  }
+  hg.addEventListener('mouseenter', playFlip);
+  hg.addEventListener('click', playFlip);
+  hg.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); playFlip(); }
+  });
+</script>
+</body>
+</html>
