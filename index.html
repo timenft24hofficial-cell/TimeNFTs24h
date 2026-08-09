@@ -26,16 +26,6 @@
   }
   ::selection{background:var(--ink); color:var(--lime);}
 
-  .num-bg{
-    position:fixed; inset:0; z-index:0;
-    display:grid; grid-template-columns:repeat(6,1fr);
-    font-family:'IBM Plex Mono',monospace;
-    font-weight:600; font-size:clamp(2rem,6vw,4.5rem);
-    color:var(--ink); opacity:0.06;
-    line-height:1.15; user-select:none; pointer-events:none;
-  }
-  .num-bg span{padding:0.4vw; text-align:center; letter-spacing:-2px;}
-
   header{
     position:sticky; top:0; z-index:20;
     display:flex; align-items:center; justify-content:space-between;
@@ -78,6 +68,269 @@
     color:var(--lime);
     display:block;
   }
+
+  .clock-row{
+    display:flex; align-items:baseline; gap:18px; flex-wrap:wrap;
+    margin-top:6px;
+  }
+  #clock{
+    font-family:'IBM Plex Mono',monospace; font-weight:600;
+    font-size:clamp(2rem,4vw,3.2rem);
+    background:var(--ink); color:var(--lime);
+    padding:10px 24px; border-radius:6px;
+    letter-spacing:2px;
+  }
+  .clock-label{font-size:0.9rem; font-weight:600; color:var(--olive); text-transform:uppercase; letter-spacing:1px;}
+
+  .lede{max-width:52ch; font-size:1.05rem; line-height:1.65; font-weight:500;}
+
+  .cta-row{display:flex; gap:16px; flex-wrap:wrap; margin-top:8px;}
+  .btn{
+    font-weight:800; font-size:1rem; padding:16px 30px;
+    border-radius:4px; border:3px solid var(--ink); cursor:pointer;
+    transition:transform 0.15s ease;
+  }
+  .btn:hover{transform:translateY(-3px);}
+  .btn-solid{background:var(--ink); color:var(--lime);}
+  .btn-outline{background:transparent; color:var(--ink);}
+
+  .disclaimer{
+    font-family:'IBM Plex Mono',monospace; font-size:0.8rem;
+    max-width:60ch; opacity:0.75; border-left:3px solid var(--ink); padding-left:14px;
+  }
+
+  /* Grid section */
+  .grid-section{background:var(--ink); color:var(--lime);}
+  .section-head{max-width:56ch; margin-bottom:6vh;}
+  .section-head .eyebrow{color:var(--lime);}
+  .section-head .eyebrow::before{background:var(--lime);}
+  .section-head h2{
+    font-family:'Archivo Black',sans-serif; text-transform:uppercase;
+    font-size:clamp(1.8rem,4vw,3rem); letter-spacing:-1px; line-height:1.05; margin-top:10px;
+  }
+
+  #dial-wrap{
+    display:flex; justify-content:center; margin:4vh 0;
+  }
+  #dial{
+    width:min(70vw,420px); height:min(70vw,420px);
+    border-radius:50%; border:3px solid var(--lime);
+    position:relative; display:flex; align-items:center; justify-content:center;
+  }
+  #dial-center{
+    font-family:'IBM Plex Mono',monospace; text-align:center;
+  }
+  #dial-time{font-size:clamp(1.8rem,4vw,2.6rem); font-weight:600;}
+  #dial-sub{font-size:0.8rem; opacity:0.7; margin-top:6px;}
+  .tick{position:absolute; width:2px; height:8px; background:var(--lime); opacity:0.25; top:0; left:50%; transform-origin:0 210px;}
+  .tick.passed{opacity:0.7;}
+  .tick.now{background:var(--white); opacity:1; width:3px; height:14px;}
+
+  .stat-row{display:flex; gap:6vw; flex-wrap:wrap; justify-content:center; margin-top:2vh;}
+  .stat{text-align:center;}
+  .stat b{font-family:'Archivo Black',sans-serif; font-size:2.2rem; display:block;}
+  .stat span{font-size:0.85rem; opacity:0.7; text-transform:uppercase; letter-spacing:1px;}
+
+  /* Feature cards */
+  .cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:22px; margin-top:4vh;}
+  .card{
+    background:var(--card); border:3px solid var(--ink); border-radius:8px;
+    padding:28px; transition:transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .card:hover{transform:translateY(-6px); box-shadow:8px 8px 0 var(--ink);}
+  .card .tag{font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:0.85rem; opacity:0.6;}
+  .card h3{font-family:'Archivo Black',sans-serif; font-size:1.3rem; text-transform:uppercase; margin:10px 0 12px;}
+  .card p{font-size:0.95rem; line-height:1.55; font-weight:500;}
+
+  /* trust list */
+  .trust-list{display:flex; flex-direction:column; gap:0; margin-top:4vh; border-top:3px solid var(--ink);}
+  .trust-item{
+    display:grid; grid-template-columns:70px 1fr; gap:20px;
+    padding:26px 0; border-bottom:3px solid var(--ink); align-items:start;
+  }
+  .trust-item .n{font-family:'Archivo Black',sans-serif; font-size:1.8rem;}
+  .trust-item h4{font-size:1.1rem; font-weight:800; margin-bottom:6px; text-transform:uppercase;}
+  .trust-item p{font-size:0.95rem; opacity:0.85; max-width:60ch;}
+
+  /* split bar */
+  .split-bar{height:60px; display:flex; border:3px solid var(--ink); border-radius:6px; overflow:hidden; margin-top:4vh;}
+  .split-bar div{display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1.1rem;}
+  .split-a{background:var(--ink); color:var(--lime); width:50%;}
+  .split-b{background:var(--card); color:var(--ink); width:50%; border-left:3px solid var(--ink);}
+
+  /* roadmap */
+  .roadmap{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:0; margin-top:4vh; border:3px solid var(--ink); border-radius:8px; overflow:hidden;}
+  .rmap-item{padding:28px; border-left:3px solid var(--ink);}
+  .rmap-item:last-child{border-left:none;}
+  .rmap-item .n{font-family:'IBM Plex Mono',monospace; font-weight:600; opacity:0.5;}
+  .rmap-item h4{font-family:'Archivo Black',sans-serif; font-size:1.1rem; text-transform:uppercase; margin:10px 0;}
+  .rmap-item p{font-size:0.9rem; opacity:0.8;}
+
+  footer{
+    background:var(--ink); color:var(--lime); text-align:center;
+    padding:6vh 6vw; font-family:'IBM Plex Mono',monospace;
+  }
+  footer .foot-title{font-family:'Archivo Black',sans-serif; font-size:1.6rem; margin-bottom:14px;}
+  footer a{color:var(--lime); text-decoration:underline;}
+  footer .small{opacity:0.6; font-size:0.8rem; margin-top:18px;}
+
+  @media (max-width:640px){
+    header{padding:14px 5vw;} nav{display:none;}
+    .disclaimer{border-left:none; border-top:3px solid var(--ink); padding-left:0; padding-top:10px;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important; transition:none !important;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">TimeNFTs24H</div>
+  <nav>
+    <a href="#concept">Concept</a>
+    <a href="#trust">Transparency</a>
+    <a href="#roadmap">Roadmap</a>
+    <a href="https://x.com/TimeNFTs_24h" target="_blank">@TimeNFTs_24h</a>
+  </nav>
+</header>
+
+<section class="hero" id="concept">
+  <div class="eyebrow">An On-Chain Time Archive</div>
+  <h1 class="hero-title">1,440 minutes<span class="accent">24 hours</span></h1>
+  <div class="clock-row">
+    <div id="clock">00:00:00</div>
+    <div class="clock-label">Coordinated Universal Time (UTC) — today's minute, counted live</div>
+  </div>
+  <p class="lede">TimeNFTs24H is a decentralized digital archive that divides every 24-hour cycle into 1,440 unique minute-tokens — absolute mathematical scarcity, an open-source smart contract, and full financial transparency.</p>
+  <div class="cta-row">
+    <button class="btn btn-solid">Explore the Chrono-Grid</button>
+    <button class="btn btn-outline">Read the Smart Contract</button>
+  </div>
+  <div class="disclaimer">Disclaimer: TimeNFTs24H tokens are digital collectibles for creative expression and community participation. They are not investment products — market value can be zero at any time.</div>
+</section>
+
+<section class="grid-section">
+  <div class="section-head">
+    <div class="eyebrow">Chrono-Grid</div>
+    <h2>1,440 minutes on a single dial. The day, mapped in real time.</h2>
+  </div>
+
+  <div id="dial-wrap">
+    <div id="dial">
+      <div id="dial-center">
+        <div id="dial-time">00:00</div>
+        <div id="dial-sub">minute 0 / 1440</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat"><b id="statElapsed">0</b><span>minutes elapsed today</span></div>
+    <div class="stat"><b id="statRemain">1440</b><span>minutes remaining</span></div>
+    <div class="stat"><b>1,440</b><span>tokens — hard cap</span></div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <div class="eyebrow">On-Chain Utility</div>
+    <h2>Not a static image — a living, interactive time vessel.</h2>
+  </div>
+  <div class="cards">
+    <div class="card">
+      <div class="tag">[ 01 ]</div>
+      <h3>Absolute Mathematical Scarcity</h3>
+      <p>Exactly 1,440 tokens — no more, no less — mirroring the minutes in a day, enforced directly in the smart contract.</p>
+    </div>
+    <div class="card">
+      <div class="tag">[ 02 ]</div>
+      <h3>Live Chrono-Grid</h3>
+      <p>A decentralized interface showing the world clock in real time, letting you connect your wallet and claim your favorite minute — a birth minute, a lucky hour, a personal milestone.</p>
+    </div>
+    <div class="card">
+      <div class="tag">[ 03 ]</div>
+      <h3>On-Chain Time Capsules</h3>
+      <p>Each token is a permanent cryptographic vessel, letting holders embed encrypted notes or memories directly into their token's metadata.</p>
+    </div>
+  </div>
+</section>
+
+<section id="trust" style="background:var(--card);">
+  <div class="section-head">
+    <div class="eyebrow">Transparency &amp; Accountability</div>
+    <h2>A pseudonymous team — backed by guarantees that don't rely on identity.</h2>
+  </div>
+  <div class="trust-list">
+    <div class="trust-item"><div class="n">01</div><div><h4>Open-source, verified contract</h4><p>Full contract code published publicly and verified on-chain (Etherscan) before any minting opens.</p></div></div>
+    <div class="trust-item"><div class="n">02</div><div><h4>Independent security audit</h4><p>A third-party audit report published publicly before launch — not promised as a future phase.</p></div></div>
+    <div class="trust-item"><div class="n">03</div><div><h4>Multisig treasury</h4><p>All collected funds sit in a multi-signature wallet requiring several independent keyholders to approve any withdrawal.</p></div></div>
+    <div class="trust-item"><div class="n">04</div><div><h4>On-chain vesting schedule</h4><p>The founder allocation unlocks gradually, enforced by the contract itself — not by personal promise.</p></div></div>
+    <div class="trust-item"><div class="n">05</div><div><h4>Sustained public track record</h4><p>Regular development updates and community engagement published well before minting — reputation earned over time, not by name.</p></div></div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <div class="eyebrow">Financial Structure</div>
+    <h2>A clean split. No market-control pools.</h2>
+  </div>
+  <p class="lede" style="margin-bottom:0;">No market-manipulation pools, no artificial floor-price control — just organic, decentralized building, with funds held in a multisig treasury and released per the published vesting schedule.</p>
+  <div class="split-bar">
+    <div class="split-a">Development &amp; infrastructure — 50%</div>
+    <div class="split-b">Founder allocation — 50%</div>
+  </div>
+</section>
+
+<section id="roadmap">
+  <div class="section-head">
+    <div class="eyebrow">Roadmap</div>
+    <h2>Four phases, with public dates and monthly reports.</h2>
+  </div>
+  <div class="roadmap">
+    <div class="rmap-item"><div class="n">01</div><h4>Contract development &amp; audit</h4><p>Smart contract build, independent security audit, Chrono-Grid interface design, and community building.</p></div>
+    <div class="rmap-item"><div class="n">02</div><h4>Full mint — 1,440 tokens</h4><p>Complete launch with no reservations — every token, including minute #001, is claimable equally.</p></div>
+    <div class="rmap-item"><div class="n">03</div><h4>Time Capsule activation</h4><p>Opening the encrypted-memory feature inside each holder's token metadata.</p></div>
+    <div class="rmap-item"><div class="n">04</div><h4>Long-term community governance</h4><p>Expanding the digital time archive through publicly voted community decisions.</p></div>
+  </div>
+</section>
+
+<footer>
+  <div class="foot-title">TimeNFTs24H</div>
+  <p>A digital artwork and on-chain time archive. Tokens represent unique, scarce moments on the blockchain, designed for digital collection, community expression, and interactive utility — not as an investment vehicle.</p>
+  <p style="margin-top:16px;"><a href="https://x.com/TimeNFTs_24h" target="_blank">Follow @TimeNFTs_24h</a></p>
+  <div class="small">Market value is not guaranteed and may be zero</div>
+</footer>
+
+<script>
+  function pad(n,l=2){return String(n).padStart(l,'0');}
+
+  function updateClock(){
+    const now = new Date();
+    const h = now.getUTCHours(), m = now.getUTCMinutes(), s = now.getUTCSeconds();
+    document.getElementById('clock').textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+    document.getElementById('dial-time').textContent = `${pad(h)}:${pad(m)}`;
+    const minuteOfDay = h*60+m;
+    document.getElementById('dial-sub').textContent = `دقيقة ${minuteOfDay} / 1440`;
+    document.getElementById('statElapsed').textContent = minuteOfDay;
+    document.getElementById('statRemain').textContent = 1440-minuteOfDay;
+  }
+  updateClock();
+  setInterval(updateClock,1000);
+
+  // Draw dial ticks (every 24 minutes = 60 ticks for perf, still 1440 feel)
+  const dial = document.getElementById('dial');
+  const total = 144; // one tick per 10 minutes for perf
+  for(let i=0;i<total;i++){
+    const tick = document.createElement('div');
+    tick.className='tick';
+    tick.style.transform = `rotate(${(360/total)*i}deg)`;
+    dial.appendChild(tick);
+  }
+</script>
+
+</body>
+</html>
 
   .clock-row{
     display:flex; align-items:baseline; gap:18px; flex-wrap:wrap;
